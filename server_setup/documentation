@@ -1,0 +1,13 @@
+└─$ docker rm -f modsec-apache 2>/dev/null || true
+
+docker run -d --name modsec-apache \
+  --network waf-lab \
+  -p 8888:8080 \
+  -e BACKEND=http://dvwa:80 \
+  -e SERVER_NAME=waf.lab \
+  -e MODSEC_RULE_ENGINE=on \
+  -e BLOCKING_PARANOIA=1 \
+  owasp/modsecurity-crs:apache
+
+modsec-apache
+dae28b366b05af72e0e5f9610285c9cb8b8d7f5abcea62ea8d9063c0c2c0d00f

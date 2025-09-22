@@ -1,0 +1,15 @@
+lab1: file integrity monitoring.
+for both the wazuh server and agent, we configure by adding the intended config. we need.
+Directory:  /var/ossec/etc/ossec.conf 
+server set all to yes which are necessary even for the global section.
+But since we are based to integration 
+
+<disable>no</disable> this means its on
+
+In tne Directiories to check, (we perform all possible verifications)
+
+In this lab, we add this check Directory
+
+<directiories check_all="yes" report_changes="yes" realtime="yes">/root</directories>
+
+So, any actions made in the root directory of the agent machine is monitored.

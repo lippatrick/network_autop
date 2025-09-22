@@ -1,0 +1,198 @@
+udo tail -n0 -F /var/log/suricata/eve.json | jq 'select(.event_type=="alert") | {ts:.timestamp, action:.alert.action, sig:.alert.signature, src:.src_ip, dst:.dest_ip}'
+Monitoring and Thread Detection 
+
+Coverage.
+    • Continuous monitoring network traffic, logs system for suspicious activities.
+        ◦ Suricata IDS and IPS configurations
+        ◦ Suricata eve.json and fast.log log file monitoring.
+        ◦ Metasploitable2 server exploitation FTP and other, ping ICMP tempts
+        ◦ jq log monitoring, alert and block.
+    • SIEM use tools. (Splunk, Wazuh, Qradar). Wazuh for this demo. 
+    • Response to security alerts and investigations.
+
+
+
+Project Title: IDS monitoring of Metasploitable2 with Suricata (IDS)
+
+Project description: Suricata (Intrusion Detection System IDS) on Kali Linux OS monitoring and log networking activities for example ping requests, FTP services exploits attempts on Metasploitable2 target server machine with lives alerts.
+
+Lab set up:
+Kali Linux VM (IDS sensor)
+Metasploitable2 VM target
+Same network (Host-only, Bridge) 
+Root or Sudo access on Kali 
+VMware workstation (type – 2 Hypervisor)
+
+Assumptions: Full knowledge about hypervisors so this project, the VMware and the Kali and Metasploitable2 machines are already installed and set up for the project.
+
+Step 1: Checking the ethernet and ip address (generally the network) on which metasploitable2 is connected.
+ip addr or ifconfig in metasploitable2 terminal – eth0 and 192.168.18.0/24
+
+Step 2: Installation of Suricata IDS/IPS.
+Installation guide is at the official site of Suricata in documentation for the available OS however, for kali Linux its a bit different.
+- sudo apt update
+- sudo apt install suricata jq -y (## jq for the eve.json log file compatibility)
+- suricata –biuld-info (verification of the installation) however, it maynote be the update version but for demo its good for start.
+  
+Step 3: Configure the suricata.yaml file.
+- sudo nano /etc/suricata/suricata.yaml
+
+This is where most of the configurations are handled. The af – packet (HOME_NET and EXTENAL_NET settings. The outputs: eve-log, eth0.
+
+
+
+
+
+
+Step 4: Load Rules.
+- sudo suricata-update
+- sudo suricata -T -c /etc/suricata/suricata.yaml -y
+- sudo systemctl enable - -now suricata
+- sudo systemctl status suricata
+  
+Step 5: Monitor in Real Time. 
+There are two log file we can monitor from, the eve.json and fast.log. Directory /var/log/suricata.
+
+- suricata tail -F /var/log/suricata/eve.json | jq ‘select(.event_type == “alert”)’
+- sudo ournalctl -u suricata - -no-pager -n 100
+
+But there is need to first set the rule files in suricata then configure in the yaml file to fire alerts. 
+The location/ directory for suricata rules is /var/lib/suricata/rules. Its here a local.rules file is created and adding the echo ICMP and FTP rules.
+- sudo nano /var/lib/suricata/rules/local.rules
+
+
+Restart suricata and tail to listen to notifications.
+- suricata tail -F /var/log/suricata/eve.json | jq ‘select(.event_type == “alert”)’
+As the listening goes on from on terminal, in another, try to ping and exploit using FTP services of metasploitable (netcat or msfconsole).
+
+Test for no errors and restart suricata.
+
+- sudo systemctl restart suricata.
+- suricata tail -F /var/log/suricata/eve.json | jq ‘select(.event_type == “alert”)’
+
+
+
+
+
+
+
+The IDS suricata to IPS (Intrusion Prevention System) mode:
+Unlike only to detect intrusions, a step up to block the intruder. Binding it with NFQUEUE (Linux Firewall QUEUE).
+
+Step 1: Stop suricata and set up iptables to send traffic to suricata.
+- sudo suricat -c /etc/suricata/suricata.yaml -q 0  (-q 0 means listen to NFQUEUE for packets.) 
+# flush old rules
+  - sudo iptables -F
+  - sudo iptables -X
+# no forward packets through NFUEUE  both directions
+   - sudo iptables -I INPUT -j NFQUEUE - -queue-num 0 
+   - sudo iptables -I OUTPUT -j NFQUEUE - -queue-num 0 
+   - sudo iptables -I FORWARD -j NFQUEUE - -queue-num 0 
+
+
+Step 2: Create and add drop/prevention rules to the local.rules file (we can create another file but for project demo still same file can be used). The rule already added to the yaml file then manually start up suricata.
+
+- sudo suricat -c /etc/suricata/suricata.yaml -q 0
+- sudo tail -no -F /var/log/suricata/eve.json | jq ‘ select(.event_type == “alert”) 1 {ts:.timestamp, action:.alert.action, …………..}’
+
+Tempt to ping or exploit using FTP to check for any alerts in the tail terminal.
+
+
+
+
+
+
+
+wget https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.12.0-1_amd64.deb && sudo WAZUH_MANAGER='192.168.18.4' WAZUH_AGENT_NAME='kali_sensor' dpkg -i ./wazuh-agent_4.12.0-1_amd64.deb
+
+
+SIEM (Security Information and Event Management) tool Wazuh
+Collects, normalizes, and analyzes security-related logs from across an IT environment.
+
+Installation. 
+
+The installation is either multiple or simple setting depending on the project one works on. For this project as a demo, its centered to be small so, using the single setting will be better into a docker container on kali linux host machine. The Wazuh manager is comprised of Wazuh dashboard (UI), Wazuh server (handling logic behind) and the Wazuh indexer. 
+The guide lines for installation can be accessed on Wazuh website documentation page for the available OS.  
+https://documentation.wazuh.com/current/installation-guide
+
+To access the web page, use the ip address (for this project 192.168.18.4 in you browser) for the machine on which its hosted. It prompts a login.
+Username: admin, Passwors: SecretPAssword.
+
+
+
+
+
+Once the manager is set up, from the dashboard under active() machine, deploy new agent button, install the Wazuh agent on the Sensor kali linux VM machine where suricata is installed. The button provides command used to set up, the agent.
+
+- select the OS of machine on which agent is to be install.
+- set the ip address of the wazuh-manager (192.168.18.5). replace with yours.
+- set the name and also keeping the rest as default.
+- copy the given agent command, paste to the sensor kali linux terminal for installation. Once done then, start the agent as these commands are provided.
+   sudo systemctl daemon-reload 
+   sudo systemctl enable wazuh-agent 
+   sudo systemctl start wazuh-agent
+
+
+
+
+
+
+
+
+
+
+
+Now for the event alerts, we must set the rules. How since this is a demo, from our experience above, we set both simple IDS and IPS rules. Some still can work for this part since its a continuous airing out more on how SIEM tools can be used to provide a more simple, UI friendly and more log handling manner. Howerver, wazuh can do much more for us than this.
+A bitter way for adding rules instead of manually, they can be downloads from a repository, stored in the /etc/suricata/rules directory, update the /etc/suricata/suricata.yaml file, replaces the rules directory from var/log/suricata/rules with also including the rules.   - “*rules” for anything called rules or select a few given rules.
+
+
+
+This is where the changes are made.
+/var/lib/suricata/rules to /etc/suricata/rules
+- local.rules to - “*rules” including all rules in the /etc/suricata/rules directory or select a few of interest and include them.
+Note: For this part, suricata setting are maintained for demonstration, so no changes made yet but its interesting to carryout.
+
+Restart suricata and also the agent, try a ping test and observe the logs from the dashboard in Wazuh.
+
+
+
+
+
+From the dashboard, where it appears Active(0) once restarted and the installations are fine, the active will indicate (1). click on it, kali_sensor (suricata, wazuh-agent will appear on the dasboard)
+
+select the machice sensor then, threat hunting, events, these logs shall appear below if an  attempt for example, ping -c4 (ip – address for metasploitable2 (on network 192.168.18.0/24)). 
+
+
+
+
+
+
+
+
+Response to  security log alerts.
+
+    • Normalization → Logs are parsed with decoders into structured fields.
+    • Rule Matching → Rules applied to detect suspicious activity.
+    • Alert Classification → Alerts tagged with severity and categories.
+    • Correlation → Combine alerts/logs across sources for context.
+    • Incident Response → Manual investigation or automated active response (e.g., block IP).
+    • Reporting → Generate dashboards/reports for compliance and visibility.
+    • Continuous Tuning → Refine decoders, rules, and thresholds to reduce false positives.
+
+Summary:
+This project set up Suricata IDS on Kali Linux to monitor and detect attacks (ICMP, FTP exploits) against a Metasploitable2 target. Logs from Suricata (eve.json, fast.log) were integrated into Wazuh SIEM via the agent, enabling centralized monitoring, alerting, and threat hunting from the Wazuh dashboard. The demo highlighted how IDS/IPS with Suricata, combined with Wazuh, provides effective real-time threat detection, response, and reporting in a lab environment.
+
+
+Reference:
+https://documentation.wazuh.com/current/index.html
+https://documentation.wazuh.com/current/installation-guide/index.html
+https://suricata.io/documentation/
+https://docs.suricata.io/en/latest/rules/intro.html
+
+
+
+
+
+
+
+

@@ -1,0 +1,34 @@
+https://www.skynats.com/blog/how-to-install-graylog-on-ubuntu-24-04/
+https://github.com/socfortress/Wazuh-Rules
+
+Grayloog is a collecting, receiving and processing data tool in the Graylog platform. A centralized log management and analysis tool.
+Ingestion is the first step in its  workflow where lod data from various sources (servers, applications,network devices, cloud services etc) is fed into Graylog for storage, enrichment and querying. 
+
+Installation.
+Prerequisites
+    sudo apt update && sudo apt upgrade
+    sudo apt install apt-transport-https openjdk-11-jreheadless uuid-
+    runtime pwgen dirmngr ghupg wget
+    sudo apt install openjdk-11-jre-headless
+    java --version
+
+MONGODB-Graylog 
+For storing configuration data, not log data. only meta stored such as user info or stream configurations.
+Can be stored on the same server as that of Gralog or dedicated server.
+
+    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+    echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+    sudo apt-get update
+    sudo apt-get install mongodb-org -y
+    sudo systeemctl daemon-reload
+    sudo systemctl enable mongod.service
+    sudo systemctl restart mongod.service
+    sudo systeemctl --type=service --state=active | grep mongod
+
+
+sudo apt install openjdk-11-jre-headless
+java --version
+
+
+GRAYLOG - 
+Graylog repository configuration and Graylog itself with the following commands

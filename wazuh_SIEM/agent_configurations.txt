@@ -1,0 +1,150 @@
+If the machine has already something installed
+for this case on, on the safe side uninstall wazuh_agent files first
+
+sudo systemctl stop wazuh-agent
+sudo systemctl disable wazuh-agent
+sudo apt-get remove --purge wazuh-agent -y
+sudo apt-get autoremove -y
+
+delete leftover files and configurations
+sudo rm -rf /var/ossec
+sudo rm -rf /etc/ossec-init.conf
+sudo rm -rf /etc/systemd/system/wazuh-agent.service
+
+reload  the daemon
+ sudo systemctl daemon-reload
+
+
+INSTALLING WWAZUH MANAGER.............
+
+always  start with the Prerequisites 
+sudo apt-get update && sudo apt-get upgrade. 
+
+------------url from the wazuh documentation site-----------
+This is the step by step guide to the single node (all on one server (ubuntu server VM machine)) for simple lab practices.
+However for big enterprises, its advisable for all to be configured on their own servers. (multiple node)
+ 
+
+------------certification----------------
+
+1. Certificate creation
+    curl -sO https://packages.wazuh.com/4.12/wazuh-certs-tool.sh
+    curl -sO https://packages.wazuh.com/4.12/config.yml
+
+2. Edit the ./config.yml file 
+Here we edit the node names (to what is necessary), ip address.
+if for multiple then we use those for the respective server.
+But single node <your-vm-ip> is what we use for all
+indexer, server and dashboard.
+3. Run ./wazuh-certs-tool.sh to create the certificates
+    bash ./wazuh-certs-tool.sh -A
+4. Compress all the necessary files.
+    tar -cvf ./wazuh-certificates.tar -C ./wazuh-certificates/ .
+    rm -rf ./wazuh-certificates
+
+5. Copy the compressed file to all the nodes. 
+indexer, Wazuh server and dashboard nodes.
+
+-----------------Node installation---------------
+1. Install missing packages in missing.
+
+    sudo apt-get install debconf adduser procps
+
+2. Add wazuh repository
+    sudo apt-get install gnupg apt-transport-https
+    GPG key
+    curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg --import && chmod 644 /usr/share/keyrings/wazuh.gpg
+    echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list
+    sudo apt-get update
+
+3. Install indexer
+    sudo apt-get -y install wazuh-indexer
+    configure the wazuh-indexer (Edit the /etc/wazuh-indexer/opensearch.yml)
+    --network.host
+    --node.names
+    --cluster.initial_master_nodes
+    These should much as those in the config.yml file as edited.
+
+4. Deploying certificates.
+The wazuh-certificates.tar should be placed in the working directory.
+
+Run the following commands replacing node-1 with the name of the Wazuh\
+indexer node you are configuring as defined in config.yml. For example, node-1. This deploys the SSL certificates \
+to encrypt communications between the Wazuh central components.
+
+NODE_NAME=node-1
+mkdir /etc/wazuh-indexer/certs
+tar -xf ./wazuh-certificates.tar -C /etc/wazuh-indexer/certs/ ./$NODE_NAME.pem ./$NODE_NAME-key.pem ./admin.pem ./admin-key.pem ./root-ca.pem
+mv -n /etc/wazuh-indexer/certs/$NODE_NAME.pem /etc/wazuh-indexer/certs/indexer.pem
+mv -n /etc/wazuh-indexer/certs/$NODE_NAME-key.pem /etc/wazuh-indexer/certs/indexer-key.pem
+chmod 500 /etc/wazuh-indexer/certs
+chmod 400 /etc/wazuh-indexer/certs/*
+chown -R wazuh-indexer:wazuh-indexer /etc/wazuh-indexer/certs
+
+5. starting the service
+
+systemctl daemon-reload
+systemctl enable wazuh-indexer
+systemctl start wazuh-indexer
+
+-----------Cluster Initialization-----------
+/usr/share/wazuh-indexer/bin/indexer-security-init.sh
+
+<curl -k -u admin:admin https://192.168.100.179:9200> to test whether its working by the cluster.
+
+
+INSTALLING WAZUH-SERVER........
+
+Adding the Wazuh repository (some steps to be skip since we using single node on the same server and they already done)
+apt-get update
+apt-get -y install wazuh-manager
+systemctl daemon-reload
+systemctl enable wazuh-manager
+systemctl start wazuh-manager
+systemctl status wazuh-manager
+
+If on different machines we take note of the firewalls case they can block communication between the components
+the server is inomplete without filebeat
+apt-get -y install filebeat
+curl -so /etc/filebeat/filebeat.yml https://packages.wazuh.com/4.12/tpl/wazuh/filebeat/filebeat.yml
+
+Then edit the /etc/filebeat/filebeat.yml change the hosts.
+nano /etc/filebeat/filebeat.yml
+
+create filebeat keystore
+filebeat keystore create
+echo admin | filebeat keystore add username --stdin --force
+echo admin | filebeat keystore add password --stdin --force
+
+These are updated to admin both username & password
+
+Download the alerts template and install wazuh modules
+curl -so /etc/filebeat/wazuh-template.json https://raw.githubusercontent.com/wazuh/wazuh/v4.12.0/extensions/elasticsearch/7.x/wazuh-template.json
+chmod go+r /etc/filebeat/wazuh-template.json
+curl -s https://packages.wazuh.com/4.x/filebeat/wazuh-filebeat-0.4.tar.gz | tar -xvz -C /usr/share/filebeat/module
+
+Deploy the certificates. This should match the config.yml 
+NODE_NAME=<SERVER_NODE_NAME> (wazuh-1) followed by a /etc/filebeat/certs directory
+mkdir /etc/filebeat/certs
+tar -xf ./wazuh-certificates.tar -C /etc/filebeat/certs/ ./$NODE_NAME.pem ./$NODE_NAME-key.pem ./root-ca.pem
+mv -n /etc/filebeat/certs/$NODE_NAME.pem /etc/filebeat/certs/filebeat.pem
+mv -n /etc/filebeat/certs/$NODE_NAME-key.pem /etc/filebeat/certs/filebeat-key.pem
+chmod 500 /etc/filebeat/certs
+chmod 400 /etc/filebeat/certs/*
+chown -R root:root /etc/filebeat/certs
+
+start the filebeat services
+    systemctl daemon-reload 
+    systemctl enable filebeat
+    systemctl start filebeat
+    systemctl status filebeat
+
+Edit the /var/ossec/etc/ossec.conf to configure the indexer connection
+<host>https://0.0.0.0:9200</host> change to the indexer ip
+
+Restart the manager and filebeat then fiebeat output for testing if it works
+
+
+---------WAZUH DASHBOARD Installation------------
+dependency packages
+apt-get install debhelper tar curl libcap2-bin #debhelper version 9 or later

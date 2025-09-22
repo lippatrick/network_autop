@@ -1,0 +1,58 @@
+Nmap Command Cheatsheet (Beginner to Pro)
+==================================================
+
+1. Basic & Quick Scans (Beginner)
+  nmap <target-IP>                              - Simple host scan with default top 1000 ports
+  nmap <target1> <target2>                      - Scan multiple specific hosts
+  nmap <subnet>/24                              - Scan entire subnet
+  nmap -iL targets.txt                          - Scan targets from a file
+  nmap -F <target-IP>                           - Fast scan (top 100 ports)
+  nmap -sn <subnet>/24                          - Ping scan - discover live hosts without port scan
+  nmap -Pn <target-IP>                          - Treat all hosts as online (skip host discovery)
+  nmap -n <target-IP>                           - Disable DNS resolution for faster scanning
+
+2. Common Port & Service Enumeration
+  nmap -p 80 <target-IP>                        - Scan a single port
+  nmap -p 80,443,8080 <target-IP>               - Scan specific ports
+  nmap -p 1-65535 <target-IP>                   - Scan all ports
+  nmap --top-ports 200 <target-IP>              - Scan top 200 most common ports
+  nmap -sV <target-IP>                          - Detect service versions
+  nmap -sV --version-intensity 5 <target-IP>    - Aggressive version detection (0-9, higher is slower)
+  nmap -O <target-IP>                           - Detect operating system
+  nmap -A <target-IP>                           - Aggressive scan: OS detect, version detect, scripts, traceroute
+
+3. Stealth & Scan Types (Intermediate)
+  nmap -sS <target-IP>                          - TCP SYN scan (stealthy)
+  nmap -sT <target-IP>                          - TCP connect scan (less stealthy)
+  nmap -sU <target-IP>                          - UDP scan
+  nmap -sA <target-IP>                          - ACK scan (firewall rule discovery)
+  nmap -sW <target-IP>                          - Window scan
+  nmap -sM <target-IP>                          - TCP Maimon scan
+  nmap -sX <target-IP>                          - Xmas scan
+  nmap -sF <target-IP>                          - FIN scan
+  nmap -sN <target-IP>                          - Null scan
+
+4. Script Scans & Vulnerability Detection
+  nmap --script vuln <target-IP>                - Run all general vulnerability scripts
+  nmap --script smb-vuln* <target-IP>           - SMB vulnerability checks
+  nmap --script http-enum <target-IP>           - Enumerate HTTP directories/files
+  nmap --script ftp-anon <target-IP>            - Check for FTP anonymous login
+  nmap --script ssl-cert <target-IP>            - Retrieve SSL/TLS certificate info
+
+5. Speed, Performance & Evasion (Advanced)
+  nmap -T4 <target-IP>                          - Faster scan (0=paranoid, 5=insane)
+  nmap --max-retries 2 --host-timeout 60s <target-IP> - Limit retries and scan time per host
+  nmap -f <target-IP>                           - Fragment packets (evade basic firewall rules)
+  nmap -D RND:10 <target-IP>                    - Use decoys to hide scan origin
+  nmap --spoof-mac 0 <target-IP>                - Spoof MAC address (0 = random vendor)
+
+6. Output & Reporting
+  nmap -oN scan.txt <target-IP>                 - Save output to a normal text file
+  nmap -oX scan.xml <target-IP>                 - Save output to XML
+  nmap -oG scan.gnmap <target-IP>               - Save output in greppable format
+  nmap -oA scan <target-IP>                     - Save output in all formats at once
+
+7. Combining for Pro-Level Recon
+  nmap -p- -sV -O -A --script vuln -T4 <target-IP> - Full scan: all ports, service & OS detect, vuln scan, faster timing
+  nmap --top-ports 1000 -sV --script vuln <target-IP> - Targeted high-risk script scans with top ports
+

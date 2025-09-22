@@ -1,0 +1,76 @@
+sudo systemctl stop suricata
+sudo systemctl disable suricata
+
+# Remove Suricata package
+sudo apt purge --auto-remove suricata -y
+
+# Delete configs, rules, logs
+sudo rm -rf /etc/suricata
+sudo rm -rf /var/lib/suricata
+sudo rm -rf /var/log/suricata
+
+
+sudo systemctl stop suricata
+sudo systemctl disable suricata
+
+# Remove package
+sudo yum remove suricata -y    # or `dnf remove suricata -y`
+
+# Delete configs, rules, logs
+sudo rm -rf /etc/suricata
+sudo rm -rf /var/lib/suricata
+sudo rm -rf /var/log/suricata
+
+
+sudo systemctl stop suricata
+sudo systemctl disable suricata
+
+# Remove binary
+sudo rm -f /usr/local/bin/suricata
+sudo rm -f /usr/local/sbin/suricata
+
+# Remove configs, rules, logs
+sudo rm -rf /usr/local/etc/suricata
+sudo rm -rf /etc/suricata
+sudo rm -rf /var/lib/suricata
+sudo rm -rf /var/log/suricata
+
+------------Installation-------------------
+
+sudo apt update
+sudo apt install suricata -y
+sudo mkdir -p /etc/suricata/rules
+
+# Download Emerging Threats rules tarball
+curl -LO https://rules.emergingthreats.net/open/suricata-6.0/emerging.rules.tar.gz
+
+# Extract rules
+tar -xvzf emerging.rules.tar.gz
+
+# Move .rules files into Suricata rules directory
+sudo mv rules/*.rules /etc/suricata/rules/
+
+# Secure file permissions
+sudo chmod 640 /etc/suricata/rules/*.rules
+
+
+sudo systemctl restart suricata
+sudo systemctl status suricata
+
+sudo suricata -T -c /etc/suricata/suricata.yaml -v
+
+
+
+https://rules.emergingthreats.net/
+-------------###################---------------
+cd /tmp
+curl -LO https://rules.emergingthreats.net/open/suricata-6.0/emerging.rules.tar.gz
+tar -xvzf emerging.rules.tar.gz
+sudo mv rules/*.rules /etc/suricata/rules/
+sudo chmod 640 /etc/suricata/rules/*.rules
+
+--------------------############################------------
+  <localfile>
+    <log_format>json</log_format>
+    <location>/var/log/suricata/eve.json</location>
+  </localfile>

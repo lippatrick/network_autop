@@ -1,0 +1,5 @@
+lab1 - OS commannd injection, simple case
+target goal - Explaoit command injection to execute whoami command
+hint: To solve the lab, execute the whoami command to determine the name of the current user.
+
+analysis:

